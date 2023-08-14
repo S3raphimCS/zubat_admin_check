@@ -1,22 +1,20 @@
+# S3raphimCS 08.2023 Script for Zubat.ru
 import requests
 from bs4 import BeautifulSoup
 import json
 import steam
 from steam.steamid import SteamID
+from os.path import exists
 
-# in the future
-# Разбор мутов/банов
-# Обработка подобного:
-# Exception
-# Попробовать ввод этой строки в lineedit PyQT5
-'''
-30.07.2023 7:49:31	22		Иркутск	"хочу чтобы люди играть спокойно ,без читеров и токсичных людей,и буду стараться уделять этому максимальное время
- "	https://steamcommunity.com/profiles/76561199103129825/	https://vk.com/weyliayame	tronnek	https://forum.zubat.ru/index.php?/profile/784-todimaks/	warloc2020@mail.ru	2,859 ч 3 ч мало часов на серверах	Fen1x
-'''
+# На вход работы скрипта идет строка из таблицы google.
+# Далее из нее парсятся нужные ссылки и с помощью реквестов и API стима выдается информацию о пользователе.
 
 
-def key_check():
+# Функция проверяет наличия API-ключа в файле key.txt
+def key_check() -> bool:
     global KEY
+    if not exists('key.txt'):
+        return False
     with open('key.txt', 'r', encoding='utf-8') as file:
         KEY = file.readline()
         if '\n' in KEY:
@@ -27,16 +25,18 @@ def key_check():
         return True
 
 
-def add_key(key: str):
+# Функция добавляет введенный API-ключ в файл key.txt для последующего использования
+def add_key(key: str) -> None:
     with open('key.txt', 'w', encoding='utf-8') as file:
         file.write(key)
     print(f'Ключ {key} успешно добавлен')
 
 
-def check_ban_mute(steamid):
+# Проверяет наличие банов и мутов у пользователя с переданным id на sb.zubat.ru
+def check_ban_mute(steamid: str) -> None:
     try:
-        mute_url = f'https://sb.zubat.ru/index.php?p=commslist&advSearch={steamid}&advType=steamid'
-        ban_url = f'https://sb.zubat.ru/index.php?p=banlist&advSearch={steamid}&advType=steamid'
+        mute_url = f'https://sb.zubat.ru/index.php?p=commslist&advSearch={steamid}&advType=steam'
+        ban_url = f'https://sb.zubat.ru/index.php?p=banlist&advSearch={steamid}&advType=steam'
         mute_soup = BeautifulSoup(requests.get(mute_url).text, 'lxml')
         ban_soup = BeautifulSoup(requests.get(ban_url).text, 'lxml')
         number_of_mutes = int(mute_soup.find('div', {'class': 'card-body'}).find('p').text.split()[-1])
@@ -54,10 +54,15 @@ def check_ban_mute(steamid):
         print('Ошибка проверки пользователя на баны/муты')
 
 
-def find_info(url):
+# Получает на вход ссылку на steam-профиль пользователя
+# Возвращает id64, steam_id, статус приватности профиля, ник в стиме и на форуме, айди для поиска по банам пользователя.
+def find_info(url: str) -> (str, str, bool, str, str, str):
     try:
         id64 = SteamID(steam.steamid.steam64_from_url(url))
+        if not id64:
+            raise ValueError
         id = id64.as_steam2
+        id_for_bans = id.split(':')[-1]
         account_request = json.loads(requests.get(
             f'https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key={KEY}&steamids={id64}').text)[
             'response']['players'][0]
@@ -71,10 +76,11 @@ def find_info(url):
     except:
         return 'Ошибка получения инфорамации о пользователе'
 
-    return id, id64, is_private, nickname, profile_link
+    return id, id64, is_private, nickname, profile_link, id_for_bans
 
 
-def get_info():
+# Парсинг информации из строки таблицы и активация остальных функций
+def get_info() -> None:
     try:
         info = input('Введите информацию из заявки: ')
         info = info.split('\t')
@@ -95,11 +101,11 @@ def get_info():
             forum_nickname = 'Неверная ссылка на форум'
 
     except:
-        print('Ошибка при парсинге информации.')
-        return None
+        print('Ошибка при парсинге информации. Проверьте введенную информацию, возможно, ошибка в ней.')
+        return False
 
     try:
-        id, id64, is_private, nickname, profile_link = find_info(url)
+        id, id64, is_private, nickname, profile_link, id_for_bans = find_info(url)
         hours = json.loads(requests.get(f'http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={KEY}&steamid={id64}&format=json').text)
         try:
             if not is_private:
@@ -117,7 +123,7 @@ def get_info():
         print('Ошибка при попытке получения общей информации о странице.')
         return None
 
-    check_ban_mute(id)
+    check_ban_mute(id_for_bans)
 
     print(f'\nСсылка на профиль - {profile_link}\n'
           f'Steam id пользователя - {id}\n'
@@ -128,7 +134,8 @@ def get_info():
           f'Наигранное время на аккаунте - {str(total_time_played)}\n')
 
 
-def main():
+# Функция, запускающая цикл работы программы
+def main() -> None:
     if not key_check():
         print("Внимание!!! Не обнаружено файла с ключом.\n"
               "Steam API key можно получить по ссылке - https://steamcommunity.com/dev/apikey")
