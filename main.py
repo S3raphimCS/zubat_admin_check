@@ -10,6 +10,7 @@ from os import getenv
 # На вход работы скрипта идет строка из таблицы google.
 # Далее из нее парсятся нужные ссылки и с помощью реквестов и API стима выдается информацию о пользователе.
 
+
 def check_url(url):
     '''Функция проверки ссылки.
 
@@ -24,34 +25,25 @@ def check_url(url):
         return False
 
 
-def get_stat(profile):
-    '''Функция для получения статистики аккаунта.
-
-    Обращаясь к API зубата, получает словарь, в котором хранятся значения, возвращаемые пользователю в зависимости
-    от переданного аргумента attr.
-    "general" - Общая статистика.
-    "public", "awp", "retake", "dm" - для соответствующих режимов.
-    '''
+def get_stat(profile: str) -> dict:
+    '''Функция получения статистики пользователя, ссылка на которого передается в profile.'''
     try:
         id64 = SteamID(steam.steamid.steam64_from_url(profile))
         zubat = json.loads(requests.get(f'https://zubat.ru/api/get_info?steam_id={id64}').text)
     except json.decoder.JSONDecodeError:
         '''Аккаунт не имеет статистики на проекте'''
-        return 'Ваш аккаунт не зарегистрирован на нашем проекте.'
+        return {'error_message': 'Аккаунт не зарегистрирован на проекте zubat.'}
 
-        '''
-        Возвращает статистику по конкретному режиму, переданному в функцию в параметре attr
-        Возможные аргументы - "awp", "public", "retake", "dm"
-        '''
-        awp_time = round(zubat['user_stats'][0]['awp_playtime'] / 60 / 60, 1)
-        public_time = round(zubat['user_stats'][0]['public_playtime'] / 60 / 60, 1)
-        dm_time = round(zubat['user_stats'][0]['dm_playtime'] / 60 / 60, 1)
-        retake_time = round(zubat['user_stats'][0]['retake_playtime'] / 60 / 60, 1)
-        return {'awp': awp_time,
-                'public_time': public_time,
-                'dm_time': dm_time,
-                'retake_time': retake_time,
-                'general_time': awp_time+public_time+dm_time+retake_time}
+    awp_time = round(zubat['user_stats'][0]['awp_playtime'] / 60 / 60, 1)
+    public_time = round(zubat['user_stats'][0]['public_playtime'] / 60 / 60, 1)
+    dm_time = round(zubat['user_stats'][0]['dm_playtime'] / 60 / 60, 1)
+    retake_time = round(zubat['user_stats'][0]['retake_playtime'] / 60 / 60, 1)
+    return {'awp_time': awp_time,
+            'public_time': public_time,
+            'dm_time': dm_time,
+            'retake_time': retake_time,
+            'general_time': awp_time+public_time+dm_time+retake_time,
+            'error_message': None, }
 
 
 # Функция проверяет наличия API-ключа в файле key.txt
@@ -62,13 +54,6 @@ def key_check() -> bool:
         return True
     else:
         return False
-
-
-# Функция добавляет введенный API-ключ в файл key.txt для последующего использования
-def add_key(key: str) -> None:
-    with open('key.txt', 'w', encoding='utf-8') as file:
-        file.write(key)
-    print(f'Ключ {key} успешно добавлен')
 
 
 # Проверяет наличие банов и мутов у пользователя с переданным id на sb.zubat.ru
@@ -113,7 +98,7 @@ def find_info(url: str) -> (str, str, bool, str, str, str):
         nickname = account_request['personaname']
         profile_link = f'http://steamcommunity.com/profiles/{id64}'
     except:
-        return 'Ошибка получения инфорамации о пользователе'
+        return 'Ошибка получения информации о пользователе'
 
     return id, id64, is_private, nickname, profile_link, id_for_bans
 
@@ -164,6 +149,8 @@ def get_info() -> None:
 
     check_ban_mute(id_for_bans)
 
+    time_played = get_stat(profile_link)
+
     print(f'\nСсылка на профиль - {profile_link}\n'
           f'Steam id пользователя - {id}\n'
           f'ID64 - {id64}\n'
@@ -172,29 +159,34 @@ def get_info() -> None:
           f'Ник на форуме - {forum_nickname}\n'
           f'Наигранное время на аккаунте - {str(total_time_played)}\n')
 
+    if time_played['error_message']:
+        print('Пользователь не зарегистрирован на zubat.ru')
+    else:
+        print(f'Общее время - {time_played["general_time"]} ч.\n'
+              f'Время на awp - {time_played["awp_time"]} ч.\n'
+              f'Время на public - {time_played["public_time"]} ч.\n'
+              f'Время на retake - {time_played["retake_time"]} ч.\n'
+              f'Время на dm - {time_played["dm_time"]} ч.')
+
 
 # Функция, запускающая цикл работы программы
 def main() -> None:
     if not key_check():
-        print("Внимание!!! Не обнаружено файла с ключом.\n"
+        print("Внимание!!! Не обнаружено .env файла с ключом.\n"
               "Steam API key можно получить по ссылке - https://steamcommunity.com/dev/apikey")
     while True:
-        print(f'1. Добавить/Изменить ключ steam API\n'
-              f'2. Разбор заявки\n'
-              f'3. Выход')
+        print(f'1. Разбор заявки\n'
+              f'2. Выход')
         choose = input('Введите пункт меню: ')
         if choose == '1':
-            key = input('Введите ключ: ')
-            add_key(key)
-        elif choose == '2':
             if key_check():
                 get_info()
             else:
                 print('Нет API ключа.')
-        elif choose == '3':
+        elif choose == '2':
             break
         else:
-            print('Вы ввели неправильное значение.')
+            print('Введено неправильное значение.')
 
 
 if __name__ == '__main__':
