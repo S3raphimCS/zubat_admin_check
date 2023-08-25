@@ -5,24 +5,63 @@ import json
 import steam
 from steam.steamid import SteamID
 from os.path import exists
+from os import getenv
 
 # На вход работы скрипта идет строка из таблицы google.
 # Далее из нее парсятся нужные ссылки и с помощью реквестов и API стима выдается информацию о пользователе.
+
+def check_url(url):
+    '''Функция проверки ссылки.
+
+    Простая проверка на валидность ссылки стим-аккаунта.
+    '''
+    if id64 := SteamID(steam.steamid.steam64_from_url(url)):
+        if requests.get(f'https://zubat.ru/api/get_info?steam_id={id64}').status_code == 200:
+            return (True, True)
+        else:
+            return (True, False)
+    else:
+        return False
+
+
+def get_stat(profile):
+    '''Функция для получения статистики аккаунта.
+
+    Обращаясь к API зубата, получает словарь, в котором хранятся значения, возвращаемые пользователю в зависимости
+    от переданного аргумента attr.
+    "general" - Общая статистика.
+    "public", "awp", "retake", "dm" - для соответствующих режимов.
+    '''
+    try:
+        id64 = SteamID(steam.steamid.steam64_from_url(profile))
+        zubat = json.loads(requests.get(f'https://zubat.ru/api/get_info?steam_id={id64}').text)
+    except json.decoder.JSONDecodeError:
+        '''Аккаунт не имеет статистики на проекте'''
+        return 'Ваш аккаунт не зарегистрирован на нашем проекте.'
+
+        '''
+        Возвращает статистику по конкретному режиму, переданному в функцию в параметре attr
+        Возможные аргументы - "awp", "public", "retake", "dm"
+        '''
+        awp_time = round(zubat['user_stats'][0]['awp_playtime'] / 60 / 60, 1)
+        public_time = round(zubat['user_stats'][0]['public_playtime'] / 60 / 60, 1)
+        dm_time = round(zubat['user_stats'][0]['dm_playtime'] / 60 / 60, 1)
+        retake_time = round(zubat['user_stats'][0]['retake_playtime'] / 60 / 60, 1)
+        return {'awp': awp_time,
+                'public_time': public_time,
+                'dm_time': dm_time,
+                'retake_time': retake_time,
+                'general_time': awp_time+public_time+dm_time+retake_time}
 
 
 # Функция проверяет наличия API-ключа в файле key.txt
 def key_check() -> bool:
     global KEY
-    if not exists('key.txt'):
-        return False
-    with open('key.txt', 'r', encoding='utf-8') as file:
-        KEY = file.readline()
-        if '\n' in KEY:
-            KEY = KEY[:-1]
-    if KEY == '':
-        return False
-    else:
+    KEY = getenv('STEAM_KEY')
+    if KEY:
         return True
+    else:
+        return False
 
 
 # Функция добавляет введенный API-ключ в файл key.txt для последующего использования
