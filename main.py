@@ -1,4 +1,6 @@
 # S3raphimCS 08.2023 Script for Zubat.ru
+import os
+
 import requests
 from bs4 import BeautifulSoup
 import json
@@ -6,9 +8,14 @@ import steam
 from steam.steamid import SteamID
 from os.path import exists
 from os import getenv
+from dotenv import load_dotenv
 
 # На вход работы скрипта идет строка из таблицы google.
 # Далее из нее парсятся нужные ссылки и с помощью реквестов и API стима выдается информацию о пользователе.
+
+dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
+if os.path.exists(dotenv_path):
+    load_dotenv(dotenv_path)
 
 
 def check_url(url):
@@ -51,7 +58,7 @@ def key_check() -> bool:
     Функция проверяет наличия API-ключа в .env
     """
     global KEY
-    KEY = getenv('STEAM_KEY')
+    KEY = os.environ.get('STEAM_KEY')
     if KEY:
         return True
     else:
