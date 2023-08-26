@@ -3,7 +3,7 @@ Python vers >= 3.8<br>
 Подразумевается работа в консоли.<br>
 ======================================<br>
 <b>Инструкция по использованию:</b><br>
-1) Склонировать проект с помощью <code>git clone github.com/S3raphimCS/zubat_admin_check</code> (Для этого в системе должен быть установлен git)<br>
+1) Склонировать проект с помощью <code>git clone https://github.com/S3raphimCS/zubat_admin_check</code> (Для этого в системе должен быть установлен git)<br>
 2) Создать в папке виртуальное окружение с помощью команды <code>python -m venv venv</code><br>
 3) Активировать виртуальное окружение командой <b>Windows</b>: <code>venv\scripts\activate</code> <b>Linux</b>: <code>source venv/bin/activate</code><br>
 4) Скачать необходимые библиотеки командой <code>pip install -r requirements.txt</code>
