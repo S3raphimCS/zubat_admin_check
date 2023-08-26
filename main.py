@@ -12,10 +12,10 @@ from os import getenv
 
 
 def check_url(url):
-    '''Функция проверки ссылки.
+    """Функция проверки ссылки.
 
     Простая проверка на валидность ссылки стим-аккаунта.
-    '''
+    """
     if id64 := SteamID(steam.steamid.steam64_from_url(url)):
         if requests.get(f'https://zubat.ru/api/get_info?steam_id={id64}').status_code == 200:
             return (True, True)
@@ -26,7 +26,7 @@ def check_url(url):
 
 
 def get_stat(profile: str) -> dict:
-    '''Функция получения статистики пользователя, ссылка на которого передается в profile.'''
+    """Функция получения статистики пользователя, ссылка на которого передается в profile."""
     try:
         id64 = SteamID(steam.steamid.steam64_from_url(profile))
         zubat = json.loads(requests.get(f'https://zubat.ru/api/get_info?steam_id={id64}').text)
@@ -46,8 +46,10 @@ def get_stat(profile: str) -> dict:
             'error_message': None, }
 
 
-# Функция проверяет наличия API-ключа в файле key.txt
 def key_check() -> bool:
+    """Функция проверки ключа.
+    Функция проверяет наличия API-ключа в .env
+    """
     global KEY
     KEY = getenv('STEAM_KEY')
     if KEY:
@@ -56,8 +58,10 @@ def key_check() -> bool:
         return False
 
 
-# Проверяет наличие банов и мутов у пользователя с переданным id на sb.zubat.ru
 def check_ban_mute(steamid: str) -> None:
+    """Функция проверки банов и мутов.
+    Проверяет наличие банов и мутов у пользователя с переданным id на sb.zubat.ru
+    """
     try:
         mute_url = f'https://sb.zubat.ru/index.php?p=commslist&advSearch={steamid}&advType=steam'
         ban_url = f'https://sb.zubat.ru/index.php?p=banlist&advSearch={steamid}&advType=steam'
@@ -70,7 +74,7 @@ def check_ban_mute(steamid: str) -> None:
         mutes = mute_soup.find('div', {'id': 'banlist'}).find('table')
 
         if number_of_bans or number_of_mutes:
-            print(f'\nУказанный пользователь получал наказания ранее: \nБанов - {number_of_bans}\nМутов - {number_of_mutes}')
+            print(f'\nУказанный пользователь получал наказания ранее: \nБанов - {number_of_bans} ({ban_url})\nМутов - {number_of_mutes} ({mute_url})')
         else:
             print('\nПользователь не получал наказаний.')
     except Exception as excp:
@@ -78,9 +82,11 @@ def check_ban_mute(steamid: str) -> None:
         print('Ошибка проверки пользователя на баны/муты')
 
 
-# Получает на вход ссылку на steam-профиль пользователя
-# Возвращает id64, steam_id, статус приватности профиля, ник в стиме и на форуме, айди для поиска по банам пользователя.
 def find_info(url: str) -> (str, str, bool, str, str, str):
+    """Функия получения информации из стим профиля.
+    Получает на вход ссылку на steam-профиль пользователя
+    Возвращает id64, steam_id, статус приватности профиля, ник в стиме и на форуме, айди для поиска по банам пользователя.
+    """
     try:
         id64 = SteamID(steam.steamid.steam64_from_url(url))
         if not id64:
@@ -103,8 +109,9 @@ def find_info(url: str) -> (str, str, bool, str, str, str):
     return id, id64, is_private, nickname, profile_link, id_for_bans
 
 
-# Парсинг информации из строки таблицы и активация остальных функций
 def get_info() -> None:
+    """Функция парсинга информации из заявки.
+    """
     try:
         info = input('Введите информацию из заявки: ')
         info = info.split('\t')
