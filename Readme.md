@@ -8,7 +8,7 @@ Python vers >= 3.8<br>
 3) Активировать виртуальное окружение командой <b>Windows</b>: <code>venv\scripts\activate</code> <b>Linux</b>: <code>source venv/bin/activate</code><br>
 4) Скачать необходимые библиотеки командой <code>pip install -r requirements.txt</code>
 5) Получить ключ Steam API по <a href='https://steamcommunity.com/dev'>этой ссылке</a> <br>
-6) В папке проекта создать файл <code>.env</code> и добавить в него переменную STEAM_KEY со значением, которое было получено во втором пункте. <b>Пример</b>: <code>STEAM_KEY=123</code><br>
+6) В папке проекта создать файл <code>.env</code> командой <code>cp .env.template .env</code>и добавить в него переменную STEAM_KEY со значением, которое было получено во втором пункте. <b>Пример</b>: <code>STEAM_KEY=123</code><br>
 7) Запустить файл <code>main.py</code><br>
 На ввод подается строка из <u>таблицы заявок</u>.<br>
 При возникновении вопросов и ошибок писать <a href='https://t.me/S3raphimCS'>сюда</a>
