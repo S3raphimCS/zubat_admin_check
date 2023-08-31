@@ -182,6 +182,12 @@ def get_info() -> None:
               f'Время на retake - {time_played["retake_time"]} ч.\n'
               f'Время на dm - {time_played["dm_time"]} ч.')
 
+    if not time_played['error_message'] and total_time_played:
+        print(f'Строка для таблицы - {(str(total_time_played) + " ч") if total_time_played else "?"} '
+              f'{time_played["general_time"]} ч '
+              f'{"мало времени стим на аккаунте" if total_time_played < 800 else ""} '
+              f'{"мало времени на проекте" if time_played["general_time"] < 40 else ""}')
+
 
 # Функция, запускающая цикл работы программы
 def main() -> None:
