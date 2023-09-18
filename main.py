@@ -183,9 +183,9 @@ def get_info() -> None:
               f'Время на dm - {time_played["dm_time"]} ч.')
 
     if not time_played['error_message'] and total_time_played:
-        print(f'Строка для таблицы - {(str(total_time_played) + " ч") if total_time_played else "?"} '
-              f'{time_played["general_time"]} ч '
-              f'{"мало времени стим на аккаунте" if total_time_played < 800 else ""} '
+        print(f'Строка для таблицы - {total_time_played if total_time_played else "?"} '
+              f'{round(time_played["general_time"], 1)} ч '
+              f'{"мало времени стим на аккаунте" if isinstance(total_time_played, int) and total_time_played < 800 else ""} '
               f'{"мало времени на проекте" if time_played["general_time"] < 40 else ""}')
 
 
